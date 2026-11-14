@@ -30,7 +30,7 @@
     "colorHighlightBg": "accent.fill",
     "colorAccentBg": "bg.canvas",
     "colorWindowBg": "bg.canvas",
-    "defaultBackground": "bg.canvas"
+    "defaultBackground": "bg.surface"
   },
   "theme_fixed": {
     "accentFromPage": false,
@@ -62,7 +62,7 @@
       "file": "flatcap-quick-commands.css",
       "license": "MIT",
       "title": "Quick Commands (F2)",
-      "summary": "Quick Commands popup: raised surface, up to 640px wide, 22px search input, a distinct selected row with an inset bar, URL and shortcut hierarchy. Row heights and positions are not touched."
+      "summary": "Quick Commands popup: raised surface, up to 640px wide, 22px search input, a distinct selected row with an inset bar, URL and shortcut hierarchy, the core overlay shadow. Text is 13px or larger. Row heights and positions are not touched."
     },
     {
       "file": "flatcap-quick-commands-motion.css",
@@ -92,7 +92,7 @@
       "file": "flatcap-url-subtle.css",
       "license": "MIT",
       "title": "Subtle address field border",
-      "summary": "Draws the address field border in the quiet `border.subtle` color at rest and in `border.control` on hover. Keyboard focus keeps a 2px focus ring. At rest the border is below 3:1 against the bar (see Accessibility)."
+      "summary": "Draws the address field border in the quiet `border.subtle` color at rest and in `border.control` on hover. Keyboard focus keeps the base's 2px focus ring. **Documented accessibility exception:** at rest the border is below the 3:1 outline target (see Accessibility)."
     },
     {
       "file": "flatcap-audio-quiet.css",

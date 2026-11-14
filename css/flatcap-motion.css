@@ -22,9 +22,6 @@
  }
 }
 @media (prefers-reduced-motion: reduce) {
- #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) {
- --fc-motion-fast: 0ms;
- }
  #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.toolbar-mainbar .button-toolbar button,.bookmark-bar button) {
  transition: none;
  }

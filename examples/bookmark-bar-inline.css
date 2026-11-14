@@ -1,7 +1,9 @@
 /*
  * Flatcap for Vivaldi 2.0.0: example, bookmark bar inline with the address bar (icon-only folders)
  *
- * THIS IS AN EXAMPLE, NOT A RELEASED LAYER. Copy it to your Custom UI Modifications folder only after you adapt it:
+ * THIS IS AN EXAMPLE, NOT A RELEASED LAYER. NOT SCOPED BY THEME ID: unlike every file in css/, its rules apply under ANY Vivaldi
+ * theme, not only Flatcap Slate and Flatcap Daylight (scripts/build.py exempts examples/ from the scope check on purpose).
+ * Copy it to your Custom UI Modifications folder only after you adapt it:
  *   1. It matches bookmark folders by their exact title, [title="Work"], [title="Reading"], [title="Tools"].
  *      Replace those three with the titles of YOUR folders (the same string appears in the three marked places below).
  *   2. It moves the bookmark bar onto the address bar row, to the right, on windows 900px wide or more. Narrower

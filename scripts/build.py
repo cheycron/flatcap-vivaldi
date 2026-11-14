@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """Build Flatcap 2.0 for Vivaldi from src/theme.json (the Flatcap core) and src/vivaldi.json (port settings).
 
-    python3 scripts/build.py --sync     write themes/*.zip, css/flatcap-ui.css and the generated blocks of README.md and docs/*.md
-    python3 scripts/build.py --check    fail on: a stale generated file, a ZIP that is not a valid Vivaldi theme export, a CSS file that
-                                        breaks the Flatcap invariants (see check_css), a personal path or profile string, or a missed
-                                        contrast target
+    python3 scripts/build.py --sync     write themes/*.zip, css/flatcap-ui.css and the generated blocks of README.md and docs/*.md;
+                                        exit 1 (after writing) if the result does not pass the checks below
+    python3 scripts/build.py --check    exit 1 on: a stale generated file, a missing or duplicated <!-- build:x --> marker, a ZIP whose
+                                        content or metadata (members, date, permissions, compression) differs from the build, a CSS rule
+                                        without a theme-id scope, a transition or animation of a layout property, a font-size under 13px,
+                                        a color literal in a layer, two layers whose rules only win by load order, a private path, IP
+                                        or host name, or a missed contrast target
 
 Two kinds of output:
   * themes/Flatcap-Slate.zip and themes/Flatcap-Daylight.zip: the format Vivaldi exports from Settings > Themes > Library >
     Export Theme: a ZIP whose root holds settings.json (the theme parameters). No background image. The ZIPs are deterministic: a
-    fixed timestamp, member order and attributes, so the same input gives the same bytes on the same Python/zlib.
+    fixed timestamp, member order and attributes. --check compares every ZIP metadata field with what the build writes; the deflate
+    stream itself depends on the zlib in use, so a different zlib may give other compressed bytes for the same content (reported as a
+    note, not an error, as long as the sizes and metadata match).
   * css/flatcap-ui.css: the tokens (--fc-*) for each theme plus the core surface rules, scoped by theme id.
 The other css/*.css files are written by hand (they are the optional layers); --check only validates them.
 Python 3.10+, standard library only.
@@ -35,10 +40,25 @@ ZIP_DATE = (2026, 1, 1, 0, 0, 0)  # fixed: the ZIPs must not change with the bui
 MODES = ("slate", "daylight")
 PRIVACY = [  # strings that must never be committed (personal paths and profile data)
     (r"[A-Za-z]:\\+Users", "a Windows user path"), (r"AppData", "an AppData path"), (r"/mnt/appdata", "a local server path"),
-    (r"/home/[a-z]", "a home directory path"), (r"\.review", "the private review folder"), (r"User Data", "a browser profile path"),
+    (r"/home/[A-Za-z0-9_.-]", "a home directory path"), (r"/Users/[A-Za-z0-9_.-]", "a macOS home path"),
+    (r"\.review", "the private review folder"), (r"User Data", "a browser profile path"),
+    (r"(?<![\d.])10\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d.])", "a private IP (RFC1918 10/8)"),
+    (r"(?<![\d.])172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}(?![\d.])", "a private IP (RFC1918 172.16/12)"),
+    (r"(?<![\d.])192\.168\.\d{1,3}\.\d{1,3}(?![\d.])", "a private IP (RFC1918 192.168/16)"),
+    (r"\b[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?:local|lan|internal|intranet|corp|home\.arpa)\b", "an internal host name"),
+    (r"\bcheycron\.com\b", "a private domain"),
 ]
-LAYOUT_PROPS = {"width", "height", "min-width", "max-width", "min-height", "max-height", "top", "left", "right", "bottom", "margin",
-                "padding", "inset", "gap", "flex", "flex-basis", "grid-template-columns", "grid-template-rows"}
+LAYOUT_RE = re.compile(r"^(?:width|height|(?:min|max)-(?:width|height|inline-size|block-size)|inline-size|block-size|top|left|right|bottom|"
+                       r"inset(?:-[a-z]+)*|margin(?:-[a-z]+)*|padding(?:-[a-z]+)*|(?:row-|column-)?gap|flex(?:-[a-z]+)*|grid(?:-[a-z]+)*|"
+                       r"border(?:-[a-z]+)*-width|font-size|line-height|letter-spacing|position|display)$")
+MIN_FONT_PX = 13  # the core's smallest text size (font.size.meta, 0.8125rem)
+SHORTHANDS = ("border", "outline", "background", "transition", "animation", "margin", "padding", "font")
+TIMING = {"ease", "ease-in", "ease-out", "ease-in-out", "linear", "step-start", "step-end", "normal", "allow-discrete"}
+DOC_BLOCKS = {"README.md": ["themes", "layers", "fonts"],
+              "docs/mapping.md": ["params", "zipcheck", "scope", "rules", "tokens", "contrast"],
+              "docs/qa-report.md": ["zipcheck", "invariants"]}
+UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+SCOPE_RE = re.compile(rf"^(?:#app )?#browser(?::is\(\.theme-id-{UUID}(?:,\.theme-id-{UUID})*\)|\.theme-id-{UUID})(?![\w-])")
 LAYOUT_EXCEPTIONS = {("flatcap-surfaces-motion.css", "width")}  # Vivaldi's own overlay-panel width transition, retimed (see the QA report)
 COLOR_TOKEN = re.compile(r"--fc-(bg|text|border|focus|accent|selection|success|warning|danger|info)-")
 
@@ -100,6 +120,10 @@ def zips(theme: dict, p: dict) -> dict[Path, dict]:
     return {ROOT / "themes" / p["themes"][m]["file"]: settings(theme, p, m) for m in MODES}
 
 
+ZIP_FIELDS = ("filename", "date_time", "compress_type", "create_system", "create_version", "extract_version", "external_attr",
+              "internal_attr", "flag_bits", "extra", "comment", "volume", "header_offset", "file_size", "CRC")
+
+
 def zip_errors(theme: dict, p: dict) -> list[str]:
     errs = []
     for path, want in zips(theme, p).items():
@@ -107,6 +131,10 @@ def zip_errors(theme: dict, p: dict) -> list[str]:
         if not path.exists():
             errs.append(f"missing ZIP: {rel} (run --sync)")
             continue
+        ref_bytes = zip_bytes(want)
+        with zipfile.ZipFile(io.BytesIO(ref_bytes)) as rz:
+            ref = rz.infolist()[0]
+        raw_zip = path.read_bytes()
         try:
             with zipfile.ZipFile(path) as z:
                 if z.testzip() is not None:
@@ -116,8 +144,18 @@ def zip_errors(theme: dict, p: dict) -> list[str]:
                 if [i.filename for i in infos] != ["settings.json"]:
                     errs.append(f"{rel}: members are {[i.filename for i in infos]}, expected only settings.json at the root")
                     continue
-                if infos[0].date_time != ZIP_DATE:
-                    errs.append(f"{rel}: timestamp {infos[0].date_time} is not the fixed {ZIP_DATE} (not deterministic)")
+                info = infos[0]
+                for f in ZIP_FIELDS:
+                    if f == "filename":
+                        continue
+                    if getattr(info, f) != getattr(ref, f):
+                        errs.append(f"{rel}: ZIP metadata {f} is {getattr(info, f)!r}, the build writes {getattr(ref, f)!r} "
+                                    f"({'timestamp' if f == 'date_time' else 'permissions' if f == 'external_attr' else 'compression' if f == 'compress_type' else 'metadata'} altered, not deterministic)")
+                if z.comment != b"":
+                    errs.append(f"{rel}: ZIP has an archive comment")
+                # no bytes outside the member and the directory (the compressed size may differ with another zlib)
+                if len(raw_zip) != len(ref_bytes) - ref.compress_size + info.compress_size:
+                    errs.append(f"{rel}: the file has bytes outside the ZIP structure (size {len(raw_zip)})")
                 raw = z.read("settings.json")
         except zipfile.BadZipFile as e:
             errs.append(f"{rel}: not a ZIP ({e})")
@@ -129,6 +167,9 @@ def zip_errors(theme: dict, p: dict) -> list[str]:
             continue
         if got != want or raw != settings_bytes(want):
             errs.append(f"stale generated file: {rel} (run --sync)")
+        elif raw_zip != ref_bytes and not any(e.startswith(str(rel)) for e in errs):
+            print(f"note: {rel} differs byte for byte from a local rebuild but has the same content, metadata and size layout; "
+                  f"expected only when this Python's zlib compresses differently", file=sys.stderr)
         for k in ("id", "name", "colorBg", "colorFg", "colorHighlightBg", "colorAccentBg", "colorWindowBg", "version", "engineVersion"):
             if k not in got:
                 errs.append(f"{rel}: settings.json has no {k}")
@@ -149,6 +190,7 @@ def token_decls(theme: dict, mode: str) -> list[tuple[str, str]]:
     out = [(tok(k), v) for k, v in theme["themes"][mode].items()]
     out += [(tok(k), v) for k, v in theme["typography"].items()]
     out += [(tok(k), v) for k, v in theme["metrics"].items()]
+    out += [(tok(k), v) for k, v in theme["elevation"][mode].items()]  # --fc-shadow-overlay, per theme
     return out
 
 
@@ -165,6 +207,8 @@ BASE_RULES: list[tuple[str, dict[str, str]]] = [
      {"background-color": "var(--fc-bg-hover)", "color": "var(--fc-text-primary)"}),
     (" :is(button,input,select,textarea,[tabindex]):not(.UrlBar-AddressField input):focus-visible",
      {"outline": "var(--fc-focus-width) solid var(--fc-focus-ring)", "outline-offset": "var(--fc-focus-offset)"}),
+    (" .UrlBar-AddressField:focus-within",
+     {"outline": "var(--fc-focus-width) solid var(--fc-focus-ring)", "outline-offset": "calc(var(--fc-focus-width) * -1)"}),
     (" :is(input,textarea)::selection",
      {"background": "var(--fc-selection-bg)", "color": "var(--fc-selection-fg)"}),
 ]
@@ -177,7 +221,8 @@ def base_css(theme: dict, p: dict) -> str:
     o = ["/*", f" * Flatcap for Vivaldi {v}: base tokens and core surfaces",
          " * Generated by scripts/build.py from src/theme.json (the Flatcap 2.0 core). Do not edit by hand.",
          " * Applies only while Flatcap Slate or Flatcap Daylight is the active theme (scoped by theme id, see docs/mapping.md).",
-         " * The other css/ files use the --fc-* tokens defined here, so load this one first (keep it in the same folder).",
+         " * The other css/ files use the --fc-* tokens defined here and must find this file in the same folder; the load order does not matter",
+         " * (no layer relies on file order, see the same-specificity check in scripts/build.py).",
          " *", " * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi", " */"]
     for m in MODES:
         o.append(f"{scope_one(p, m)} {{")
@@ -217,6 +262,191 @@ def defined_tokens(css: str) -> set[str]:
 
 def css_files(p: dict) -> list[Path]:
     return [CSS_DIR / l["file"] for l in layers(p)]
+
+
+def split_top(text: str, sep: str) -> list[str]:
+    """Split on sep outside (), [] and quotes."""
+    out, depth, cur, q = [], 0, [], ""
+    for ch in text:
+        if q:
+            cur.append(ch)
+            q = "" if ch == q else q
+        elif ch in "\"'":
+            q = ch
+            cur.append(ch)
+        elif ch in "([":
+            depth += 1
+            cur.append(ch)
+        elif ch in ")]":
+            depth -= 1
+            cur.append(ch)
+        elif ch == sep and depth == 0:
+            out.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    out.append("".join(cur))
+    return [x.strip() for x in out if x.strip()]
+
+
+def blocks(css: str) -> list[tuple[str, str]]:
+    """Top-level (prelude, body) pairs of comment-free CSS."""
+    out, depth, pre, body_start, prelude = [], 0, 0, 0, ""
+    for i, ch in enumerate(css):
+        if ch == "{":
+            if depth == 0:
+                prelude, body_start = css[pre:i].strip(), i + 1
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                out.append((prelude, css[body_start:i]))
+                pre = i + 1
+    return out
+
+
+def walk(css: str, ctx: tuple = ()):
+    """Yield (kind, prelude, body, ctx): kind is 'rule' or 'keyframes'. @media/@supports are entered, other at-rules are skipped."""
+    for pre, body in blocks(css):
+        if pre.startswith("@keyframes"):
+            yield "keyframes", pre, body, ctx
+        elif pre.startswith(("@media", "@supports", "@layer")):
+            yield from walk(body, ctx + (pre,))
+        elif pre.startswith("@"):
+            continue
+        else:
+            yield "rule", pre, body, ctx
+
+
+def decls(body: str) -> list[tuple[str, str]]:
+    out = []
+    for d in split_top(body, ";"):
+        if ":" in d and not d.startswith("{"):
+            k, v = d.split(":", 1)
+            out.append((k.strip().lower(), v.strip()))
+    return out
+
+
+def is_layout(prop: str) -> bool:
+    return bool(LAYOUT_RE.match(prop))
+
+
+def transition_props(prop: str, value: str) -> tuple[list[str], bool]:
+    """(property names a transition declaration names, whether it leaves the property implicit, which means 'all')."""
+    names, implicit = [], False
+    if prop == "transition-property":
+        return [x.strip().lower() for x in value.split(",")], False
+    for seg in split_top(value, ","):
+        seg = re.sub(r"[a-z-]+\([^()]*(?:\([^()]*\)[^()]*)*\)", " ", seg.lower())
+        toks = [t for t in seg.split() if not re.fullmatch(r"-?[\d.]+m?s", t) and t not in TIMING]
+        if toks == ["none"]:
+            continue
+        if not toks:
+            implicit = True
+        names += toks
+    return names, implicit
+
+
+def spec(sel: str) -> tuple[int, int, int]:
+    """Selector specificity (ids, classes/attributes/pseudo-classes, types), simplified: enough for this repository's selectors."""
+    a = b = c = 0
+    i, n = 0, len(sel)
+    ident = re.compile(r"[\w-]+")
+    while i < n:
+        ch = sel[i]
+        if ch == "#":
+            a += 1
+            i += 1 + (ident.match(sel, i + 1).end() - i - 1 if ident.match(sel, i + 1) else 0)
+        elif ch == ".":
+            b += 1
+            m = ident.match(sel, i + 1)
+            i = m.end() if m else i + 1
+        elif ch == "[":
+            b += 1
+            i = sel.index("]", i) + 1
+        elif ch == ":":
+            pseudo_el = sel[i:i + 2] == "::"
+            m = ident.match(sel, i + (2 if pseudo_el else 1))
+            name = m.group(0).lower() if m else ""
+            i = m.end() if m else i + 1
+            args = None
+            if i < n and sel[i] == "(":
+                depth, j = 0, i
+                while j < n:
+                    depth += (sel[j] == "(") - (sel[j] == ")")
+                    j += 1
+                    if depth == 0:
+                        break
+                args, i = sel[i + 1:j - 1], j
+            if pseudo_el:
+                c += 1
+            elif name in ("is", "not", "has", "matches") and args is not None:
+                s = max((spec(x) for x in split_top(args, ",")), default=(0, 0, 0))
+                a, b, c = a + s[0], b + s[1], c + s[2]
+            elif name == "where":
+                pass
+            else:
+                b += 1
+        elif ch.isalpha() or ch == "_":
+            c += 1
+            i = ident.match(sel, i).end()
+        else:
+            i += 1
+    return a, b, c
+
+
+def subject(sel: str) -> frozenset[str]:
+    """What the last compound selector can match: its classes, ids and tag names (also inside :is()), scope removed. {'<scope>'} means
+    the scope element itself and {'*'} a compound with no class, id or tag (for example only a pseudo-class)."""
+    s = re.sub(r"\.theme-id-" + UUID, "", sel)
+    s = re.sub(r":is\(\s*(?:,\s*)*\)", "", s)
+    s = re.sub(r":(?:not|has|where)\((?:[^()]|\([^()]*\))*\)", "", s)
+    last = re.split(r"\s+|\s*[>+~]\s*", s.strip())[-1]
+    if re.fullmatch(r"#browser|#app", last):
+        return frozenset({"<scope>"})
+    last = re.sub(r":is\(([^()]*)\)", r"|\1|", last)
+    found = set(re.findall(r"[.#][\w-]+", last)) | set(re.findall(r"(?:^|[|,])([a-z][\w-]*)", last))
+    found -= {"#browser", "#app"}
+    return frozenset(found) if found else frozenset({"*"})
+
+
+def overlap(a: frozenset[str], b: frozenset[str]) -> bool:
+    if a & b:
+        return True
+    return ("*" in a and b != {"<scope>"}) or ("*" in b and a != {"<scope>"})
+
+
+def conflicts(a: str, b: str) -> bool:
+    """Two property names whose cascade fights (same name, or a shorthand against one of its longhands)."""
+    if a == b:
+        return True
+    return any((a == sh and b.startswith(sh + "-")) or (b == sh and a.startswith(sh + "-")) for sh in SHORTHANDS)
+
+
+def order_errors(p: dict) -> list[str]:
+    """Rules of two different layer files that hit the same element and property with equal specificity: the winner would depend on the
+    order Vivaldi reads the files. Pseudo-class rules and media blocks are compared as if they always applied (conservative)."""
+    entries = []  # (file, selector, specificity, subject, properties)
+    for l in layers(p):
+        f = CSS_DIR / l["file"]
+        if not f.exists():
+            continue
+        for kind, pre, body, ctx in walk(strip_comments(f.read_text(encoding="utf-8"))):
+            if kind != "rule":
+                continue
+            props = {k: re.sub(r"\s+", " ", v) for k, v in decls(body)}
+            for sel in split_top(pre, ","):
+                entries.append((l["file"], sel, spec(sel), subject(sel), props))
+    errs = []
+    for i, (fa, sa, pa, ja, ka) in enumerate(entries):
+        for fb, sb, pb, jb, kb in entries[i + 1:]:
+            if fa == fb or pa != pb or not overlap(ja, jb):
+                continue
+            both = sorted({x for x in ka for y in kb if conflicts(x, y) and ka[x] != kb[y]} | {y for x in ka for y in kb if conflicts(x, y) and ka[x] != kb[y]})
+            if both:
+                errs.append(f"{fa} and {fb}: same specificity {pa} on the same element for {', '.join(both)} ('{sa}' / '{sb}'): "
+                            f"the result depends on load order")
+    return errs
 
 
 def check_css(theme: dict, p: dict) -> list[str]:
@@ -259,14 +489,70 @@ def check_css(theme: dict, p: dict) -> list[str]:
             errs.append(f"css/{n}: animates or transitions but has no prefers-reduced-motion rule")
         if COLOR_TOKEN.search(css) and "forced-colors" not in css:
             errs.append(f"css/{n}: paints with color tokens but has no forced-colors guard")
-        for m in re.finditer(r"transition(?:-property)?\s*:\s*([^;}]*)", css):
-            for prop in re.findall(r"(?<![\w-])([a-z-]+)(?=\s|,|$)", m.group(1)):
-                if prop in LAYOUT_PROPS and (n, prop) not in LAYOUT_EXCEPTIONS:
-                    errs.append(f"css/{n}: transitions the layout property {prop}")
+        for kind, pre, body, ctx in walk(css):
+            if kind == "keyframes":
+                for _, kb in blocks(body):
+                    for prop, _v in decls(kb):
+                        if is_layout(prop) and (n, prop) not in LAYOUT_EXCEPTIONS:
+                            errs.append(f"css/{n}: {pre} animates the layout property {prop}")
+                continue
+            for sel in split_top(pre, ","):
+                if not SCOPE_RE.match(sel):
+                    errs.append(f"css/{n}: selector without a Flatcap theme-id scope: {sel[:90]}")
+            for prop, val in decls(body):
+                if prop in ("transition", "transition-property"):
+                    names, implicit = transition_props(prop, val)
+                    if implicit:
+                        errs.append(f"css/{n}: '{prop}: {val[:40]}' names no property, which transitions all of them")
+                    for name in names:
+                        if is_layout(name) and (n, name) not in LAYOUT_EXCEPTIONS:
+                            errs.append(f"css/{n}: transitions the layout property {name}")
+                if prop in ("animation", "animation-name") and re.search(r"(?<![\w-])all(?![\w-])", val):
+                    errs.append(f"css/{n}: animation names 'all'")
+                if prop == "font-size":
+                    m = re.fullmatch(r"([\d.]+)(px|rem)", val.strip())
+                    if m:
+                        px = float(m.group(1)) * (16 if m.group(2) == "rem" else 1)
+                        if px < MIN_FONT_PX:
+                            errs.append(f"css/{n}: font-size {val} is under {MIN_FONT_PX}px")
+                    elif not val.startswith("var(--fc-font-size-") and val not in ("inherit", "initial", "unset"):
+                        errs.append(f"css/{n}: font-size {val} cannot be checked against {MIN_FONT_PX}px (use px, rem or a --fc-font-size token)")
+                if not l.get("base") and re.search(r"#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|hwb|color-mix)\(", val):
+                    errs.append(f"css/{n}: '{prop}' holds a color literal; use a --fc-* token ({val[:50]})")
+    return errs + order_errors(p)
+
+
+def example_errors() -> list[str]:
+    """examples/ is exempt from the scope rule on purpose; the file must say so, so nobody mistakes it for a layer."""
+    errs = []
+    for f in sorted((ROOT / "examples").glob("*.css")):
+        head = f.read_text(encoding="utf-8")[:3000]
+        if "NOT SCOPED BY THEME ID" not in head or "NOT A RELEASED LAYER" not in head:
+            errs.append(f"examples/{f.name}: the header must say 'NOT A RELEASED LAYER' and 'NOT SCOPED BY THEME ID'")
     return errs
 
 
-def invariant_rows(p: dict) -> list[tuple[str, str, str, str, str]]:
+def marker_errors() -> list[str]:
+    errs = []
+    for rel, want in DOC_BLOCKS.items():
+        path = ROOT / rel
+        if not path.exists():
+            errs.append(f"{rel}: missing (it carries generated blocks)")
+            continue
+        text = path.read_text(encoding="utf-8")
+        found = re.findall(r"<!--\s*/?build:([\w-]+)\s*-->", text)
+        for name in sorted(set(found) - set(want)):
+            errs.append(f"{rel}: unexpected generated block marker 'build:{name}'")
+        for name in want:
+            o, c = text.count(f"<!-- build:{name} -->"), text.count(f"<!-- /build:{name} -->")
+            if o != 1 or c != 1:
+                errs.append(f"{rel}: marker <!-- build:{name} --> found {o}x and its closing marker {c}x, expected 1 and 1")
+            elif text.index(f"<!-- build:{name} -->") > text.index(f"<!-- /build:{name} -->"):
+                errs.append(f"{rel}: build:{name} closes before it opens")
+    return errs
+
+
+def invariant_rows(p: dict) -> list[tuple[str, ...]]:
     rows = []
     for l in layers(p):
         f = CSS_DIR / l["file"]
@@ -275,10 +561,13 @@ def invariant_rows(p: dict) -> list[tuple[str, str, str, str, str]]:
         css = strip_comments(f.read_text(encoding="utf-8"))
         uses_color = bool(COLOR_TOKEN.search(css)) or "background" in css
         animates = bool(re.search(r"@keyframes|animation\s*:|animation-name|transition", css))
+        unscoped = sum(1 for k, pre, _b, _c in walk(css) if k == "rule" for sel in split_top(pre, ",") if not SCOPE_RE.match(sel))
+        sizes = [v for k, pre, body, _c in walk(css) if k == "rule" for pr, v in decls(body) if pr == "font-size"]
         rows.append((l["file"], "yes" if "forced-colors" in css else ("n/a" if not uses_color else "**no**"),
                      "yes" if "prefers-reduced-motion" in css else ("n/a" if not animates else "**no**"),
                      "no" if not re.search(r"transition(-property)?\s*:[^;{}]*\ball\b", css) else "**yes**",
-                     "yes (retimed native panel width, not while dragging)" if l["file"] == "flatcap-surfaces-motion.css" else "no"))
+                     "yes (retimed native panel width, not while dragging)" if l["file"] == "flatcap-surfaces-motion.css" else "no",
+                     "none" if not unscoped else f"**{unscoped}**", ", ".join(sorted(set(sizes))) or "(none set)"))
     return rows
 
 
@@ -327,7 +616,7 @@ def pairs(theme: dict) -> list[tuple[str, str, str, str, float, str, float]]:
         add("accent.on on accent.fill (text on highlighted fills, --colorHighlightFg)", "accent.on", "accent.fill", 4.5, "fill")
         add("selection.fg on selection.bg (selected text in fields)", "selection.fg", "selection.bg", 4.5, "fill")
         for s in ("canvas", "surface", "raised", "hover", "selected"):
-            add(f"focus.ring on bg.{s} (2px focus ring, selected-row bar)", "focus.ring", f"bg.{s}", 3.0, "focus")
+            add(f"focus.ring on bg.{s} (2px focus ring, selected-row bar, address field focus)", "focus.ring", f"bg.{s}", 3.0, "focus")
         add("border.control on bg.canvas (address and search field border, field fill)", "border.control", "bg.canvas", 3.0, "outline")
         add("border.control on bg.surface (address and search field border, bar)", "border.control", "bg.surface", 3.0, "outline")
         add("accent.fill on border.subtle (download progress fill vs its track)", "accent.fill", "border.subtle", 3.0, "outline")
@@ -441,8 +730,9 @@ def md_contrast(theme: dict, p: dict) -> str:
 
 
 def md_invariants(theme: dict, p: dict) -> str:
-    L = ["| File | forced-colors guard | reduced-motion guard | `transition: all` | Transitions a layout property |", "| :--- | :--- | :--- | :--- | :--- |"]
-    L += [f"| `{a}` | {b} | {c} | {d} | {e} |" for a, b, c, d, e in invariant_rows(p)]
+    L = ["| File | forced-colors guard | reduced-motion guard | `transition: all` | Transitions a layout property | Selectors outside the theme-id scope | `font-size` values |",
+         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |"]
+    L += [f"| `{a}` | {b} | {c} | {d} | {e} | {f} | {g} |" for a, b, c, d, e, f, g in invariant_rows(p)]
     return "\n".join(L)
 
 
@@ -476,37 +766,41 @@ def main() -> int:
     errs = validate_core(theme, p)
     outs = outputs(theme, p)
     if a.sync:
+        errs += marker_errors()
         (ROOT / "themes").mkdir(exist_ok=True)
         CSS_DIR.mkdir(exist_ok=True)
         for path, s in zips(theme, p).items():
             path.write_bytes(zip_bytes(s))
         for path, css in outs.items():
             path.write_text(css, encoding="utf-8")
-        for d in DOCS:
-            if d.exists():
+        if not marker_errors():
+            for d in DOCS:
                 d.write_text(render(d, theme, p), encoding="utf-8")
         print("synced:", ", ".join(x.name for x in [*zips(theme, p), *outs]))
-        errs += check_css(theme, p) + contrast_errors(theme)
-        for e in errs:
-            print("WARN", e)
+        errs += zip_errors(theme, p) + check_css(theme, p) + example_errors() + privacy_errors(p) + contrast_errors(theme)
+        if errs:
+            print("\n".join("ERROR " + e for e in sorted(set(errs))))
+            return 1
         return 0
+    errs += marker_errors()
     stale = []
     for path, css in outs.items():
         if not path.exists() or path.read_text(encoding="utf-8") != css:
             stale.append(str(path.relative_to(ROOT)))
-    for d in DOCS:
-        if d.exists() and d.read_text(encoding="utf-8") != render(d, theme, p):
-            stale.append(str(d.relative_to(ROOT)))
+    if not marker_errors():
+        for d in DOCS:
+            if d.read_text(encoding="utf-8") != render(d, theme, p):
+                stale.append(str(d.relative_to(ROOT)))
     errs += [f"stale generated file: {s} (run --sync)" for s in stale]
-    errs += zip_errors(theme, p) + check_css(theme, p) + privacy_errors(p) + contrast_errors(theme)
+    errs += zip_errors(theme, p) + check_css(theme, p) + example_errors() + privacy_errors(p) + contrast_errors(theme)
     if errs:
         print("\n".join(sorted(set(errs))))
         return 1
     n_rows = len([r for r in rows(theme) if r["group"] != "report"])
-    print(f"ok: {len(zips(theme, p))} theme ZIPs (settings.json, fixed timestamp, UUID v4 ids), {len(layers(p))} CSS files "
-          f"(header, license, scope ids, defined tokens, forced-colors and reduced-motion guards, no transition: all), "
-          f"{len([d for d in DOCS if d.exists()])} docs current, no personal paths, {n_rows} contrast targets met "
-          f"({len(rows(theme)) - n_rows} report-only rows)")
+    print(f"ok: {len(zips(theme, p))} theme ZIPs (content and metadata as built), {len(layers(p))} CSS files (header, license, theme-id scope on every "
+          f"rule, defined tokens, no color literals, font-size >= {MIN_FONT_PX}px, forced-colors and reduced-motion guards, no transition: all, "
+          f"no layout transition or animation, no load-order dependence), {len(DOCS)} docs current with their markers, no private paths, IPs or "
+          f"hosts, {n_rows} contrast targets met ({len(rows(theme)) - n_rows} report-only rows)")
     return 0
 
 

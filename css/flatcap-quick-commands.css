@@ -1,7 +1,8 @@
 /*
  * Flatcap for Vivaldi 2.0.0: Quick Commands (F2)
  * Quick Commands popup: raised surface, up to 640px wide, 22px search input, a distinct selected row with an
- * inset bar, URL and shortcut hierarchy. Row heights and positions are not touched.
+ * inset bar, URL and shortcut hierarchy, the core overlay shadow (--fc-shadow-overlay). Text is 13px or larger.
+ * Row heights and positions are not touched.
  *
  * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
  * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
@@ -11,14 +12,14 @@
 /* Preserve virtual row heights/positions, search-hint alignment, scroll and motion layer. */
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container { width: min(640px, calc(100vw - 32px)); font-family: var(--fc-font-ui); }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container :is(.quick-command-search,.quick-command-search-hint) { font-family: var(--fc-font-ui); font-size: 22px; font-weight: 400; }
-#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command-shortcut { margin-left: auto; flex: 0 0 auto; font-size: 11px; line-height: 16px; padding: 0 5px; border-radius: 4px; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command-shortcut { margin-left: auto; flex: 0 0 auto; font-size: 13px; line-height: 16px; padding: 0 5px; border-radius: 4px; }
 @media (forced-colors: none) {
-#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal > div { border-radius: var(--fc-radius-dialog); box-shadow: 0 0 0 1px var(--fc-border-subtle), 0 12px 32px rgb(0 0 0 / 22%); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal > div { border-radius: var(--fc-radius-dialog); box-shadow: 0 0 0 1px var(--fc-border-subtle), var(--fc-shadow-overlay); }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container { background-color: var(--fc-bg-raised); color: var(--fc-text-primary); }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container :is(.quick-command-search,.quick-command-search-hint) { color: var(--fc-text-primary); border-bottom-color: var(--fc-border-subtle); }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command-search:focus-visible { box-shadow: inset 3px 0 var(--fc-focus-ring); }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-commands { background-color: var(--fc-bg-raised); color: var(--fc-text-primary); }
-#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command-sectionheader { color: var(--fc-text-secondary); background-color: var(--fc-bg-surface); opacity: 1; font-size: 11px; font-weight: 600; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command-sectionheader { color: var(--fc-text-secondary); background-color: var(--fc-bg-surface); opacity: 1; font-size: 13px; font-weight: 600; }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command:not([data-selected]):hover { background-color: var(--fc-bg-hover); }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command[data-selected] { color: var(--fc-text-primary); background-color: var(--fc-bg-selected); box-shadow: inset 3px 0 var(--fc-focus-ring); }
 #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-command-url { color: var(--fc-text-secondary); opacity: 1; }

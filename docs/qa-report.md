@@ -24,19 +24,19 @@ Two parts. **Part A** is the build check: it runs without Vivaldi, on every push
 ### CSS invariants (static)
 
 <!-- build:invariants -->
-| File | forced-colors guard | reduced-motion guard | `transition: all` | Transitions a layout property |
-| :--- | :--- | :--- | :--- | :--- |
-| `flatcap-ui.css` | yes | n/a | no | no |
-| `flatcap-quick-commands.css` | yes | n/a | no | no |
-| `flatcap-quick-commands-motion.css` | yes | yes | no | no |
-| `flatcap-motion.css` | yes | yes | no | no |
-| `flatcap-surfaces-motion.css` | yes | yes | no | yes (retimed native panel width, not while dragging) |
-| `flatcap-tabs-minimal.css` | yes | n/a | no | no |
-| `flatcap-url-subtle.css` | yes | n/a | no | no |
-| `flatcap-audio-quiet.css` | yes | n/a | no | no |
-| `flatcap-downloads.css` | yes | n/a | no | no |
-| `flatcap-extensions-list.css` | yes | n/a | no | no |
-| `flatcap-extensions-inline.css` | yes | yes | no | no |
+| File | forced-colors guard | reduced-motion guard | `transition: all` | Transitions a layout property | Selectors outside the theme-id scope | `font-size` values |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `flatcap-ui.css` | yes | n/a | no | no | none | (none set) |
+| `flatcap-quick-commands.css` | yes | n/a | no | no | none | 13px, 22px |
+| `flatcap-quick-commands-motion.css` | yes | yes | no | no | none | (none set) |
+| `flatcap-motion.css` | yes | yes | no | no | none | (none set) |
+| `flatcap-surfaces-motion.css` | yes | yes | no | yes (retimed native panel width, not while dragging) | none | (none set) |
+| `flatcap-tabs-minimal.css` | yes | n/a | no | no | none | (none set) |
+| `flatcap-url-subtle.css` | yes | n/a | no | no | none | (none set) |
+| `flatcap-audio-quiet.css` | yes | n/a | no | no | none | (none set) |
+| `flatcap-downloads.css` | yes | n/a | no | no | none | (none set) |
+| `flatcap-extensions-list.css` | yes | n/a | no | no | none | 13px |
+| `flatcap-extensions-inline.css` | yes | yes | no | no | none | (none set) |
 <!-- /build:invariants -->
 
 `flatcap-surfaces-motion.css` is the one layer that transitions a layout property: `width` of the overlay panel group, which is Vivaldi's own native transition with its timing replaced (140ms). It is not applied while the panel is being resized (`:has(.resizing)`), it only affects the overlay panel, and it is off under reduced motion. Whether it feels right is a live-QA item.
@@ -74,7 +74,7 @@ Status values: `PASS` (observed live), `PARTIAL` (part of the check was observed
 | 2 | Library after installing both | Two themes, **Flatcap Slate** and **Flatcap Daylight**. The stored `colorBg`, `colorFg`, `colorHighlightBg`, `colorAccentBg`, `colorWindowBg` match the ZIPs (see #5 for the exceptions). | PASS |
 | 3 | Classes of `#browser` | With Slate active: `theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001`. With Daylight active: `theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002`. **The import keeps the id**, so the theme-id scope works. Read through the remote-debugging port, not the `--debug-packed-apps` flags. | PASS |
 | 4 | Import the same ZIP again | The popup offered **Update**; after accepting there were still two user themes, no duplicate. | PASS |
-| 5 | Diff against an export | No Export dialog was driven. Instead the ZIP `settings.json` was diffed against the theme object Vivaldi stored in `Preferences`. `id` and `name` are equal. Three keys differ, for both themes: `defaultBackground` (ZIP: the canvas color, `#191D22` / `#F3F5F7`; stored: the surface color, `#20252B` / `#FAFBFC`), `dimBlurred` (absent in the ZIP, stored `false`) and `simpleScrollbar` (absent in the ZIP, stored `false`). The ZIPs were not changed: the visible window color comes from `colorWindowBg`, which is unchanged. | PARTIAL |
+| 5 | Diff against an export | No Export dialog was driven. First pass (before Q4): `defaultBackground` differed (ZIP: canvas; stored: surface), so the ZIPs now carry `bg.surface` (`#20252B` / `#FAFBFC`). Q4 re-import of the current ZIPs (Slate preview object read from `vivaldi.themes.preview`): `defaultBackground` is kept as `#20252B`; Vivaldi adds `dimBlurred: false` and `simpleScrollbar: false`. Those two keys are the only known differences; the Daylight preview object was not diffed again, and a real Export was not compared. | PARTIAL |
 | 6 | Remove a theme, re-import it | Not run. | NOT TESTED |
 | 7 | Install from themes.vivaldi.net | Not published yet. | NOT TESTED |
 
@@ -96,7 +96,7 @@ Finding (theme schedule): a new profile has *Settings → Themes → Schedule* s
 | File | Result | Status |
 | :--- | :--- | :--- |
 | `flatcap-ui.css` | Tokens and window background as in B2 #3. Hover, address field border, focus rings, text selection, ligatures: not checked. | PARTIAL |
-| `flatcap-quick-commands.css` | F2 opened the popup. Slate: width 640px, background `rgb(41, 47, 54)` (`#292F36`), text `rgb(213, 219, 227)` (`#D5DBE3`), search input 22px. Daylight: width 640px, background `rgb(255, 255, 255)`, text `rgb(40, 49, 59)` (`#28313B`), search input 22px. Esc closed it. Narrow window, selected row bar, URL line, shortcut chip and row heights: not checked. | PARTIAL |
+| `flatcap-quick-commands.css` | F2 opened the popup. Slate: width 640px, background `rgb(41, 47, 54)` (`#292F36`), text `rgb(213, 219, 227)` (`#D5DBE3`), search input 22px. Daylight: width 640px, background `rgb(255, 255, 255)`, text `rgb(40, 49, 59)` (`#28313B`), search input 22px. Esc closed it. Q4 re-check with the 13px layer: section header 13px, shadow token `--fc-shadow-overlay` resolved to the core elevation (Slate `rgba(0,0,0,.24) 0 8px 24px`); the shortcut chip size was not read. Narrow window, selected row bar, URL line, shortcut chip and row heights: not checked. | PARTIAL |
 | `flatcap-quick-commands-motion.css` | Loaded (4 rules). The 140ms entry and the rest: not checked. | NOT TESTED |
 | `flatcap-motion.css` | Loaded (2 rules). Behavior not checked. | NOT TESTED |
 | `flatcap-surfaces-motion.css` | Loaded (2 rules). Behavior not checked. | NOT TESTED |
@@ -124,30 +124,30 @@ Finding (theme schedule): a new profile has *Settings → Themes → Schedule* s
 
 ### B6. Screenshots
 
-The four PNGs the README links are in `images/`, 1440 × 900 each. They were taken again in a second pass (an earlier set at 1000 × 912 was discarded: the Daylight page was dark, there were five leftover *Blank Page* tabs, and the size was small).
+The four PNGs the README links are in `images/`, 1440 × 900 each. They were retaken in the Q4 remediation with the current ZIPs and CSS (an earlier set was replaced; a provisional Q4 Slate take was discarded because a Theme Preview dialog was in the shot).
 
 Method:
 
-- A new throw-away profile (`--user-data-dir` in the Windows temp folder, `--no-first-run`, `--lang=en-US`, a high remote-debugging port, `--window-size=1440,900`), separate from the author's running Vivaldi, which was not touched.
-- Themes: both ZIPs were imported with `vivaldi.themePrivate.import` (the same call the *Open Theme* button makes); the preview objects it produced were moved to the user theme list, as the *Install* button does, and the theme was selected with `vivaldi.themes.current`. The theme schedule was set to off (`vivaldi.theme.schedule.enabled`), because the default (*Operating System*) overrides the choice. The `css/` files were placed in a temporary folder chosen in `vivaldi.appearance.css_ui_mods_directory` with `vivaldi-css-mods@1` in `Local State`, then Vivaldi was restarted. The `--fc-*` tokens and the `theme-id-…` class were read before each capture (Slate `--fc-bg-canvas` `#191D22`).
-- Page color scheme: Windows is in dark mode, so a page that follows `prefers-color-scheme` was dark under Daylight. For the captures the page was emulated through CDP, `Emulation.setEmulatedMedia` with `prefers-color-scheme: dark` for Slate and `light` for Daylight. The Vivaldi setting for the website color scheme was not used.
-- Content: three tabs, no logged-in account: `developer.mozilla.org` (the active one, a page of the CSS `color-scheme` property), `vivaldi.com` and `example.com`.
-- Capture: `Page.captureScreenshot` of the Vivaldi UI window (tab bar, address bar, side panel, page). For the Quick Commands images F2 was pressed (checked that the popup was open) and `tab` was typed. A first take of the Slate set had the popup open by mistake in the plain shot; it was repeated after closing the popup with Esc and checking it.
-- Transfer: the bytes were sent from the test machine over a TCP socket; the SHA-256 on the receiving side equals the one computed on the test machine.
-- Review: each PNG was opened and looked at. Slate shows a dark window with a dark page, Daylight a light window with a light page, the Quick Commands popup shows the typed `tab` and its results, no extra tabs, and no personal data or other windows. The two shown elements that are not Flatcap's are Vivaldi's default side-panel icons and the status bar clock.
+- A new throw-away profile (`Flatcap-Q4-20261114` in the Windows temp folder, Vivaldi 8.3.4191.44, high remote-debugging port, viewport 1440 × 900), separate from the author's running Vivaldi, which was not touched.
+- Themes: both current ZIPs were imported with `vivaldi.themePrivate.import` (the call behind *Open Theme*); the preview objects were copied to the user theme list through the profile preferences. This is **not** a click on the *Install* button. The `css/` files from the repo (hashes matched on both ends) were loaded as UI mods. `--fc-*` tokens and the `theme-id-…` class were read before each capture (Slate `--fc-bg-canvas` `#191D22`, Daylight `#F3F5F7`).
+- Content: three tabs on public pages (`iana.org/help/example-domains`, `example.org`, `example.com`), no logged-in account. The page color scheme was not emulated this time.
+- Capture: `Page.captureScreenshot`. Before each capture the script checked that no `.modal-wrapper` dialog and no Quick Commands popup was open. For the popup shots F2 was pressed and `tab` typed; Esc (`keyDown`) closed it, and its closure was checked.
+- Quick Commands values read in the same run: width 640px, section header 13px, search input 22px, search value `tab`. Slate shadow `rgb(61, 70, 82) 0 0 0 1px, rgba(0, 0, 0, 0.24) 0 8px 24px 0`; Daylight `rgb(210, 217, 224) 0 0 0 1px, rgba(25, 29, 34, 0.1) 0 8px 24px 0`. The `.quick-command-shortcut` element was not present with the computed size read (null), so the 13px floor was **not** observed for the shortcut chip.
+- Transfer: bytes were posted to a temporary receiver; the SHA-256 on the receiving side equals the one computed on the test machine.
+- Review: each PNG was opened and looked at. No dialog, no personal data, no other windows. Slate is a dark window, Daylight a light one, and the popup shows `tab` with its results. Vivaldi's default side-panel icons and the status bar clock are visible. The example.com page looks dark under Slate and light under Daylight; why (Vivaldi's website color scheme setting) was not investigated.
 
 | File | Size | Bytes | SHA-256 |
 | :--- | :--- | ---: | :--- |
-| `screenshot-slate.png` | 1440 × 900 | 206134 | `BC294169C2DD60B7CE12625BA43EA29A30D5E5F1CC62D564B1B88F1857F7B03C` |
-| `screenshot-daylight.png` | 1440 × 900 | 197656 | `251423F73C685B9DF71BEF2726A01EAB672E2CE8F8BDD5DD107F4C8C119B3323` |
-| `quick-commands-slate.png` | 1440 × 900 | 193633 | `3BC84CC59951203E9CD1863D5E24AB98EAD10DB21A50E2416C70E66CD110A106` |
-| `quick-commands-daylight.png` | 1440 × 900 | 188794 | `4960D17E81683D05D342437D99BDC2017F57089EE7C0B1DE96CCEBFD58067FE4` |
+| `screenshot-slate.png` | 1440 × 900 | 73154 | `BBF43BDD1F774907151818E14FD1B2C7AA4E70A39E5606C5936008950BBE12FF` |
+| `screenshot-daylight.png` | 1440 × 900 | 71143 | `B87793679D6AE80675B243F253B6C0FE23E180ECD16B96F56D6FF33669C59723` |
+| `quick-commands-slate.png` | 1440 × 900 | 66909 | `8A1C4DA8CC367BC1B3A24764CA0E739D6B052B44F7A9C69725EC1B33D20B136B` |
+| `quick-commands-daylight.png` | 1440 × 900 | 66122 | `E1D41CB4FA62EA9C976F9EEDAF7B1022107E1B38F1C22FF3DCC4BDBD88FD34FD` |
 
-The profile, the CSS folder and the temporary files were deleted afterwards.
+The Q4 profile and temporary files are removed after the run; the protected pre-existing folder was not touched.
 
 ### B7. Release gates still open
 
 - Owner decision on the GPL-3.0 file (see Part A).
 - Decision on `flatcap-url-subtle.css` (kept as a documented exception, or fixed or removed).
-- Finish B3 to B5 (the layers marked NOT TESTED, accessibility, the example). The screenshots (B6) are done.
+- Finish B3 to B5 (the layers marked NOT TESTED, accessibility, the example). Screenshots (B6) retaken in Q4 for Slate and Daylight.
 - Publish on themes.vivaldi.net (separate step; the README has an HTML TODO comment for the link).
