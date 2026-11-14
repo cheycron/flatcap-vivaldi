@@ -22,8 +22,10 @@ Python 3.10+, standard library only.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import json
+import os
 import re
 import sys
 import zipfile
@@ -36,17 +38,21 @@ ROOT = Path(__file__).resolve().parent.parent
 THEME = ROOT / "src" / "theme.json"
 PORT = ROOT / "src" / "vivaldi.json"
 CSS_DIR = ROOT / "css"
+PRIVATE_FILE = ROOT / ".private-patterns"  # local, git-ignored: one regular expression per line (see .private-patterns.example)
 ZIP_DATE = (2026, 1, 1, 0, 0, 0)  # fixed: the ZIPs must not change with the build date
 MODES = ("slate", "daylight")
-PRIVACY = [  # strings that must never be committed (personal paths and profile data)
-    (r"[A-Za-z]:\\+Users", "a Windows user path"), (r"AppData", "an AppData path"), (r"/mnt/appdata", "a local server path"),
-    (r"/home/[A-Za-z0-9_.-]", "a home directory path"), (r"/Users/[A-Za-z0-9_.-]", "a macOS home path"),
+PRIVACY = [  # generic patterns for strings that must never be committed: personal paths, private addresses, internal names, personal emails
+    (r"[A-Za-z]:\\+Users", "a Windows user path"), (r"AppData", "an AppData path"),
+    (r"/mnt/[A-Za-z0-9_.-]", "a /mnt path"), (r"/home/[A-Za-z0-9_.-]", "a home directory path"), (r"/Users/[A-Za-z0-9_.-]", "a macOS home path"),
+    (r"(?<![\w\\:.])\\\\[A-Za-z0-9_-][\w.-]*\\+[\w$]", "a UNC path"),
     (r"\.review", "the private review folder"), (r"User Data", "a browser profile path"),
     (r"(?<![\d.])10\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d.])", "a private IP (RFC1918 10/8)"),
     (r"(?<![\d.])172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}(?![\d.])", "a private IP (RFC1918 172.16/12)"),
     (r"(?<![\d.])192\.168\.\d{1,3}\.\d{1,3}(?![\d.])", "a private IP (RFC1918 192.168/16)"),
+    (r"(?<![\d.])100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}(?![\d.])", "a CGNAT / Tailscale IP (100.64/10)"),
     (r"\b[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.(?:local|lan|internal|intranet|corp|home\.arpa)\b", "an internal host name"),
-    (r"\bcheycron\.com\b", "a private domain"),
+    (r"\b[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.ts\.net\b", "a Tailscale host name (*.ts.net)"),
+    (r"[A-Za-z0-9._%+-]+@(?!(?:[A-Za-z0-9-]+\.)*noreply\.github\.com\b)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+", "an email address that is not a GitHub noreply one"),
 ]
 LAYOUT_RE = re.compile(r"^(?:width|height|(?:min|max)-(?:width|height|inline-size|block-size)|inline-size|block-size|top|left|right|bottom|"
                        r"inset(?:-[a-z]+)*|margin(?:-[a-z]+)*|padding(?:-[a-z]+)*|(?:row-|column-)?gap|flex(?:-[a-z]+)*|grid(?:-[a-z]+)*|"
@@ -571,13 +577,48 @@ def invariant_rows(p: dict) -> list[tuple[str, ...]]:
     return rows
 
 
+def private_patterns() -> tuple[list[tuple[re.Pattern, str]], list[str]]:
+    """Names of the maintainer's own machines, domains and users: kept out of the repository, in a local file that git ignores
+    (.private-patterns, or the file FLATCAP_PRIVATE_PATTERNS points to). One regular expression per line, # starts a comment."""
+    env = os.environ.get("FLATCAP_PRIVATE_PATTERNS")
+    path = Path(env) if env else PRIVATE_FILE
+    if not path.is_file():
+        return [], ([f"FLATCAP_PRIVATE_PATTERNS points to a file that does not exist ({path.name})"] if env else [])
+    pats, errs = [], []
+    for n, ln in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        ln = ln.strip()
+        if ln and not ln.startswith("#"):
+            try:
+                pats.append((re.compile(ln, re.I), f"a private pattern (line {n} of {path.name})"))
+            except re.error as ex:
+                errs.append(f"{path.name} line {n}: not a valid regular expression ({ex})")
+    return pats, errs
+
+
+def core_sha256() -> str:
+    return hashlib.sha256(THEME.read_bytes().replace(b"\r\n", b"\n")).hexdigest()  # line endings must not matter on a Windows checkout
+
+
+def core_errors(p: dict) -> list[str]:
+    pin = p.get("core", {}).get("sha256", "")
+    if not re.fullmatch(r"[0-9a-f]{64}", pin):
+        return ["src/vivaldi.json: core.sha256 (the pinned SHA-256 of src/theme.json) is missing or not a SHA-256"]
+    got = core_sha256()
+    if got != pin:
+        return [f"src/theme.json differs from the pinned core copy (SHA-256 {got}, src/vivaldi.json pins {pin}). A core change is taken on "
+                f"purpose: copy the file from {p['core']['repo']}, run --pin-core, then --sync"]
+    return []
+
+
 def privacy_errors(p: dict) -> list[str]:
     errs = []
+    private, perrs = private_patterns()
+    errs += perrs
     files = [x for x in ROOT.rglob("*") if x.is_file() and ".git" not in x.relative_to(ROOT).parts
              and not {".review", "__pycache__", ".tmp", "node_modules"} & set(x.relative_to(ROOT).parts)]
     for f in files:
         rel = f.relative_to(ROOT)
-        if rel.as_posix() in ("scripts/build.py", "LICENSES/GPL-3.0.txt", ".gitignore"):
+        if rel.as_posix() in ("scripts/build.py", "LICENSES/GPL-3.0.txt", ".gitignore", PRIVATE_FILE.name):
             continue
         if f.suffix == ".zip":
             with zipfile.ZipFile(f) as z:
@@ -589,6 +630,9 @@ def privacy_errors(p: dict) -> list[str]:
         for pat, what in PRIVACY:
             if re.search(pat, data):
                 errs.append(f"{rel}: contains {what} ({pat})")
+        for rx, what in private:  # the pattern itself is not printed: it is private
+            if rx.search(data):
+                errs.append(f"{rel}: contains {what}")
     return errs
 
 
@@ -644,7 +688,7 @@ def contrast_errors(theme: dict) -> list[str]:
 
 
 def validate_core(theme: dict, p: dict) -> list[str]:
-    errs = []
+    errs = core_errors(p)
     if theme.get("version") != "2.0.0":
         errs.append(f"src/theme.json version is {theme.get('version')}, expected 2.0.0")
     if p.get("version") != theme.get("version"):
@@ -761,7 +805,17 @@ def main() -> int:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--sync", action="store_true")
     g.add_argument("--check", action="store_true")
+    g.add_argument("--pin-core", action="store_true")
     a = ap.parse_args()
+    if a.pin_core:
+        text = PORT.read_text(encoding="utf-8")
+        new, n = re.subn(r'("sha256": ")[0-9a-f]{64}(")', lambda m: m.group(1) + core_sha256() + m.group(2), text)
+        if n != 1:
+            print("src/vivaldi.json: expected exactly one core.sha256 to rewrite")
+            return 1
+        PORT.write_text(new, encoding="utf-8")
+        print(f"pinned src/theme.json: {core_sha256()}")
+        return 0
     theme, p = load(), port()
     errs = validate_core(theme, p)
     outs = outputs(theme, p)
@@ -799,8 +853,8 @@ def main() -> int:
     n_rows = len([r for r in rows(theme) if r["group"] != "report"])
     print(f"ok: {len(zips(theme, p))} theme ZIPs (content and metadata as built), {len(layers(p))} CSS files (header, license, theme-id scope on every "
           f"rule, defined tokens, no color literals, font-size >= {MIN_FONT_PX}px, forced-colors and reduced-motion guards, no transition: all, "
-          f"no layout transition or animation, no load-order dependence), {len(DOCS)} docs current with their markers, no private paths, IPs or "
-          f"hosts, {n_rows} contrast targets met ({len(rows(theme)) - n_rows} report-only rows)")
+          f"no layout transition or animation, no load-order dependence), {len(DOCS)} docs current with their markers, no private paths, IPs, "
+          f"hosts or emails, core copy pinned by SHA-256, {n_rows} contrast targets met ({len(rows(theme)) - n_rows} report-only rows)")
     return 0
 
 

@@ -1,0 +1,7 @@
+# Copy to .private-patterns (git ignores that name) and list, one regular expression per line, the strings that must never be committed
+# and that the generic patterns of scripts/build.py cannot know: your machines, your domains, your user name. Case-insensitive.
+# `python3 scripts/build.py --check` fails if a tracked file (or a file inside a .pthm) matches one; the matching pattern is not printed.
+# The generic ones (RFC1918, CGNAT 100.64/10, *.ts.net, home and /mnt paths, Windows user folders, UNC shares, non-noreply emails) are always on.
+# FLATCAP_PRIVATE_PATTERNS=/path/to/file points the check at another file.
+\bmy-workstation\b
+\bmy-domain\.example\b
