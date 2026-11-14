@@ -127,7 +127,7 @@ This section says what is measured and what is only intended. Nothing here is a 
 - Text size: no layer sets text smaller than 13px (the core's smallest size, `font.size.meta`); `build.py --check` enforces it. Vivaldi's own text sizes elsewhere are not changed by Flatcap.
 - Nothing uses `transition: all`, and no layer transitions or animates a layout property (one native transition is only retimed, see below).
 
-**Explicit exception: `flatcap-url-subtle.css` is below the 3:1 outline target.** It draws the address field border in the quiet `border.subtle` color at rest (1.3:1 to 1.8:1 against the field fill and the bar). No core border token reaches 3:1 except `border.control`, which is what the base already uses (4:1 or more), so making this layer comply would make it do nothing. The field stays recognizable by position, its text and the focus ring, but its border alone is faint, which is below WCAG 2.x 1.4.11 for a component boundary. The layer is optional and off unless you load it; leave it out if you need a clear field boundary.
+**Explicit exception, intentional and accepted by the owner: `flatcap-url-subtle.css` is below the 3:1 outline target.** It draws the address field border in the quiet `border.subtle` color at rest (1.3:1 to 1.8:1 against the field fill and the bar). No core border token reaches 3:1 except `border.control`, which is what the base already uses (4:1 or more), so making this layer comply would make it do nothing. The field stays recognizable by position, its text and the focus ring, but its border alone is faint, which is below WCAG 2.x 1.4.11 for a component boundary. The visible keyboard focus ring of the base is kept. The layer is optional and off unless you load it; leave it out if you need a clear field boundary.
 
 Other limits:
 
@@ -147,7 +147,7 @@ Every mapping is in [docs/mapping.md](https://github.com/cheycron/flatcap-vivald
 
 ## Third-party code and licenses
 
-This repository has **mixed licenses**: MIT for everything except `css/flatcap-extensions-list.css`, which is **GPL-3.0** with attribution. The owner's final decision on that file (keep it GPL-3.0, or drop it to keep the repository purely MIT) is still open; until then it stays as it is. See [LICENSES/README.md](https://github.com/cheycron/flatcap-vivaldi/blob/main/LICENSES/README.md) for what that means when you copy files.
+This repository has **mixed licenses**: MIT for everything except `css/flatcap-extensions-list.css`, which is **GPL-3.0** with attribution. The owner decided to keep that file under GPL-3.0 and to accept the mixed license. See [LICENSES/README.md](https://github.com/cheycron/flatcap-vivaldi/blob/main/LICENSES/README.md) for what that means when you copy files.
 
 - `css/flatcap-extensions-list.css` follows the structure of `Extensions.css` from [Awesome-Vivaldi](https://github.com/PaRr0tBoY/Awesome-Vivaldi) (authors @quodroc and PaRr0tBoY), which is **GPL-3.0**. That one file is therefore GPL-3.0, not MIT; its text is in [`LICENSES/GPL-3.0.txt`](https://github.com/cheycron/flatcap-vivaldi/blob/main/LICENSES/GPL-3.0.txt). If you want a purely MIT set, do not copy that file.
 - `css/flatcap-audio-quiet.css` and `css/flatcap-downloads.css` are inspired by the ideas of Quietify and the download panel mod from the same project. No code was taken from them: they are different implementations on the Flatcap tokens.
@@ -167,7 +167,7 @@ The other files in `css/` are written by hand; a new one must be listed in `src/
 
 ## License
 
-MIT © Cheycron Blaine, **except `css/flatcap-extensions-list.css`, which is GPL-3.0** (attribution above; the owner's final decision on it is pending). See [LICENSE](https://github.com/cheycron/flatcap-vivaldi/blob/main/LICENSE) and [LICENSES/README.md](https://github.com/cheycron/flatcap-vivaldi/blob/main/LICENSES/README.md).
+MIT © Cheycron Blaine, **except `css/flatcap-extensions-list.css`, which is GPL-3.0** (attribution above; the owner accepted the mixed license). See [LICENSE](https://github.com/cheycron/flatcap-vivaldi/blob/main/LICENSE) and [LICENSES/README.md](https://github.com/cheycron/flatcap-vivaldi/blob/main/LICENSES/README.md).
 
 ## Support
 

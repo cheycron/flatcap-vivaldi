@@ -147,7 +147,6 @@ The Q4 profile and temporary files are removed after the run; the protected pre-
 
 ### B7. Release gates still open
 
-- Owner decision on the GPL-3.0 file (see Part A).
-- Decision on `flatcap-url-subtle.css` (kept as a documented exception, or fixed or removed).
+- Decided by the owner (closed): `css/flatcap-extensions-list.css` stays GPL-3.0 and the mixed license is accepted; the rest-state border of `flatcap-url-subtle.css` below 3:1 is an intentional exception, keeping the visible focus ring; the repository history stays as it is and internal names are not documented.
 - Finish B3 to B5 (the layers marked NOT TESTED, accessibility, the example). Screenshots (B6) retaken in Q4 for Slate and Daylight.
 - Publish on themes.vivaldi.net (separate step; the README has an HTML TODO comment for the link).
