@@ -1,0 +1,18 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Quiet tab audio indicator
+ * Keeps Vivaldi's native audio icon and states but removes the hover movement, rounds it and gives it a hover
+ * surface and a focus ring.
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ * Inspired by the idea of Quietify (Awesome-Vivaldi); no code was taken from it. Native icon and states are
+ * kept; no language-dependent selectors.
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+@media (forced-colors: none) {
+#app #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab-audio:hover { transform: none; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab-audio { border-radius: var(--fc-radius-control); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab-audio:hover { background-color: var(--fc-bg-hover); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab-audio:focus-visible { outline: 2px solid var(--fc-focus-ring); outline-offset: -2px; }
+}

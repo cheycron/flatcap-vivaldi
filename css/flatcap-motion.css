@@ -1,0 +1,31 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Button feedback
+ * 120ms background-color feedback on toolbar and bookmark-bar buttons. Press and keyboard focus are immediate.
+ * Off under reduced motion.
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+/* Canonical guidance: github.com/cheycron/flatcap-theme/blob/main/docs/motion.md */
+/* No layout, focus outline, theme, tab, popup or panel animation overrides. */
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+ #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.toolbar-mainbar .button-toolbar button,.bookmark-bar button):not(:disabled) {
+ transition-property: background-color;
+ transition-duration: var(--fc-motion-fast, 120ms);
+ transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+ transition-delay: 0ms;
+ }
+ #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.toolbar-mainbar .button-toolbar button,.bookmark-bar button):is(:active,:focus-visible) {
+ transition: none;
+ }
+}
+@media (prefers-reduced-motion: reduce) {
+ #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) {
+ --fc-motion-fast: 0ms;
+ }
+ #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.toolbar-mainbar .button-toolbar button,.bookmark-bar button) {
+ transition: none;
+ }
+}

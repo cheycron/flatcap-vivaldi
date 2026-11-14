@@ -1,0 +1,20 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Expanded extensions group
+ * When you expand the extensions group in the toolbar, gives it a raised surface, a subtle inset border and
+ * rounded corners, and fades the icons in over 140ms. No width animation. Off under reduced motion.
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+/* No width animation, positioning changes, clipping or popup transforms. */
+@media (forced-colors: none) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002):not(.toolbar-edit-mode) .toolbar-extensions:has(.ExtensionToggleIcon--Expanded) { background-color: var(--fc-bg-raised); border-radius: 8px; box-shadow: inset 0 0 0 1px var(--fc-border-subtle); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002):not(.toolbar-edit-mode) .toolbar-extensions:has(.ExtensionToggleIcon--Expanded) .ExtensionToggleIcon > button { background-color: var(--fc-bg-hover); border-radius: 6px; }
+}
+@keyframes fc-extension-reveal { from { opacity: 0.35; translate: 3px 0; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002):not(.toolbar-edit-mode) .toolbar-extensions:has(.ExtensionToggleIcon--Expanded) > .ExtensionIcon { animation: fc-extension-reveal 140ms cubic-bezier(0.16,1,0.3,1) both; }
+}
+/* Closing remains immediate: icons unmount. Native animation-off rules remain authoritative. */

@@ -1,0 +1,15 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Subtle address field border
+ * Draws the address field border in the quiet border.subtle color at rest and in border.control on hover.
+ * Keyboard focus keeps a 2px focus ring. At rest the border is below 3:1 against the bar (see Accessibility).
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+@media (forced-colors: none) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .UrlBar-AddressField { border-color: var(--fc-border-subtle); box-shadow: none; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .UrlBar-AddressField:hover:not(:focus-within) { border-color: var(--fc-border-control); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .UrlBar-AddressField:focus-within { border-color: var(--fc-focus-ring); outline: 2px solid var(--fc-focus-ring); outline-offset: -2px; }
+}

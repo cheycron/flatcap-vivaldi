@@ -1,0 +1,24 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Popup, panel and tab timing
+ * Retimes Vivaldi's own popup entry (140ms transform, 120ms opacity) and exit (100ms fade), the overlay-panel
+ * width transition (140ms, off while you drag the panel edge) and the hover feedback of inactive tabs (120ms).
+ * Off under reduced motion.
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+/* Preserve popup lifecycle/direction; no new layout or tab-position animations. */
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .button-popup:is(.button-popup-enter,.button-popup-appear):is(.button-popup-enter-active,.button-popup-appear-active) { transition: transform 140ms cubic-bezier(0.16,1,0.3,1), opacity 120ms linear; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .button-popup.button-popup-exit-active { transform: none; transition: opacity 100ms ease-out; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #panels-container.overlay:not(.resizing) .panel-group { transition: width 140ms cubic-bezier(0.2,0,0,1); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002):has(.resizing) #panels-container.overlay .panel-group { transition: none; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab:not(.active):not(.marked) { transition: background-color 120ms cubic-bezier(0.2,0,0,1); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab:is(.active,.marked,:active,:focus-visible) { transition: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.button-popup,#panels-container.overlay .panel-group,.tab-position .tab) { transition: none; animation: none; }
+}
+/* Native animation-off !important rules remain authoritative. */

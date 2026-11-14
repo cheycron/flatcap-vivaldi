@@ -1,0 +1,78 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: example, bookmark bar inline with the address bar (icon-only folders)
+ *
+ * THIS IS AN EXAMPLE, NOT A RELEASED LAYER. Copy it to your Custom UI Modifications folder only after you adapt it:
+ *   1. It matches bookmark folders by their exact title, [title="Work"], [title="Reading"], [title="Tools"].
+ *      Replace those three with the titles of YOUR folders (the same string appears in the three marked places below).
+ *   2. It moves the bookmark bar onto the address bar row, to the right, on windows 900px wide or more. Narrower
+ *      windows keep Vivaldi's separate bookmark bar row.
+ *      Set the width with --fc-bm-width. The space it reserves is that width plus 16px.
+ *   3. It needs the address bar and the bookmark bar both at the TOP (Settings > Address Bar and Settings > Bookmarks),
+ *      and the Downloads button visible in the address bar: the bookmark bar is anchored to its left edge (CSS anchor positioning).
+ *   4. Every bookmark-bar button becomes a 32px icon-only square. A button with no icon of its own (a bookmark with no favicon)
+ *      shows nothing, so use it only for folders and bookmarks that have an icon. Titles stay available as the hover tooltip.
+ *
+ * Why it is an example and not a layer: it depends on personal folder titles, it hides labels (a trade-off each person should
+ * choose) and it reserves a fixed width. It does not need flatcap-ui.css; where the Flatcap tokens exist they color the icons.
+ * Status: adapted from the author's own setup, not tested in this form. Unofficial UI modification; a newer Vivaldi can break it.
+ *
+ * Icons: three plain shapes drawn for this repository (a briefcase, a book, a circle), MIT. They are masks, so they take the
+ * Flatcap text color and change with the theme. To use another icon, replace the data URL in the mask-image rule of that folder.
+ * If you reuse an icon set (for example Font Awesome Free), keep its license: Font Awesome Free icons are CC BY 4.0 and need an
+ * attribution line such as "Icons: Font Awesome Free by Fonticons, Inc., CC BY 4.0, https://fontawesome.com/license/free".
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+
+#browser { --fc-bm-width: 410px; }
+
+/* Layout: bookmark bar on the address bar row (windows 900px wide or more). */
+#browser:not(.fullscreen).address-top.bookmark-bar-top #main { position: relative; }
+@media (min-width: 900px) {
+  #browser:not(.fullscreen).address-top.bookmark-bar-top:not(.toolbar-edit-mode) #main > .mainbar { padding-right: calc(var(--fc-bm-width) + 16px); }
+  #browser:not(.fullscreen).address-top.bookmark-bar-top:not(.toolbar-edit-mode) #main > .bookmark-bar {
+    position: absolute; top: 5px; right: 8px; width: var(--fc-bm-width); height: 30px;
+    border: 0; z-index: 5; background: transparent; padding: 0;
+  }
+}
+
+/* Icon-only buttons. */
+.bookmark-bar button:not(.chevron) { min-width: 32px; max-width: 32px; justify-content: center; padding: 0; margin: 0; border-radius: 4px; }
+.bookmark-bar .observer { gap: 1px; padding: 0; }
+.bookmark-bar button > .title { display: none; }
+.bookmark-bar button:not(.chevron)::before { display: none; }
+.bookmark-bar button img, .bookmark-bar button svg { width: 18px; height: 18px; }
+
+/* Folder icons. Not applied in forced-colors mode, where the native icons stay. */
+@media (forced-colors: none) {
+  /* CHANGE THESE TITLES (1 of 3: the shared rules) */
+  .bookmark-bar button:is([title="Work"], [title="Reading"], [title="Tools"])::after {
+    content: ""; display: block; width: 18px; height: 18px;
+    background-color: var(--fc-text-secondary, currentColor);
+    mask-repeat: no-repeat; mask-position: center; mask-size: contain;
+  }
+  .bookmark-bar button:is([title="Work"], [title="Reading"], [title="Tools"]):hover::after { background-color: var(--fc-text-primary, currentColor); }
+  .bookmark-bar button:is([title="Work"], [title="Reading"], [title="Tools"]) > :is(.VivaldiSvgIcon, svg, img) { display: none; }
+
+  /* CHANGE THESE TITLES (2 of 3: one icon per folder) */
+  .bookmark-bar button[title="Work"]::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='7' width='18' height='13' rx='2'/%3E%3Crect x='9' y='3' width='6' height='4' rx='1'/%3E%3C/svg%3E");
+  }
+  .bookmark-bar button[title="Reading"]::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 4h8v16H3zM13 4h8v16h-8z'/%3E%3C/svg%3E");
+  }
+  /* CHANGE THESE TITLES (3 of 3) */
+  .bookmark-bar button[title="Tools"]::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E");
+  }
+}
+
+/* The bar sits between the address field and the Downloads button (windows 900px wide or more). */
+@media (min-width: 900px) {
+  #browser:not(.fullscreen).address-top.bookmark-bar-top:not(.toolbar-edit-mode) #main .mainbar { padding-right: 0; }
+  #browser:not(.fullscreen).address-top.bookmark-bar-top:not(.toolbar-edit-mode) .toolbar-addressbar #downloads {
+    anchor-name: --fc-downloads; margin-left: calc(var(--fc-bm-width) + 16px);
+  }
+  #browser:not(.fullscreen).address-top.bookmark-bar-top:not(.toolbar-edit-mode) #main .bookmark-bar { right: anchor(--fc-downloads left); margin-right: 8px; }
+  #browser:not(.fullscreen).address-top.bookmark-bar-top:not(.toolbar-edit-mode) .toolbar-addressbar .toolbar-spacer { display: none; }
+}

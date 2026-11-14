@@ -1,0 +1,18 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Minimal tabs
+ * Inactive tabs lose their background and border (secondary text color); hover uses the hover surface; the
+ * active tab is a raised surface. Tab size, icons, stacks, marked tabs, drop targets and accordions are left
+ * alone.
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ * Tab geometry, controls, stacks and marked/drop states are preserved.
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+@media (forced-colors: none) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab:not(.marked):not(.tab-acceptsdrop):not(.tab-in-accordion) { box-shadow: none; border-color: transparent; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab:not(.active):not(.marked):not(.tab-acceptsdrop):not(.tab-in-accordion) { background-color: transparent; color: var(--fc-text-secondary); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab-wrapper:hover .tab:not(.active):not(.marked):not(.tab-acceptsdrop):not(.tab-in-accordion) { background-color: var(--fc-bg-hover); color: var(--fc-text-primary); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .tab-position .tab.active:not(.marked):not(.tab-acceptsdrop):not(.tab-in-accordion) { background-color: var(--fc-bg-raised); color: var(--fc-text-primary); }
+}

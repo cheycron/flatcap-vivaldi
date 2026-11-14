@@ -1,0 +1,24 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Extensions dropdown as a list
+ * When extensions live in the dropdown, shows them as a 280px vertical list with the extension name as a visible
+ * label. Pinned toolbar icons and extension popups are not touched. GPL-3.0 (see Third-party code).
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ *
+ * License: GPL-3.0 (NOT MIT). This file follows the structure of Extensions.css from Awesome-Vivaldi
+ * (https://github.com/PaRr0tBoY/Awesome-Vivaldi, GPL-3.0; authors @quodroc and PaRr0tBoY): the same selectors and several
+ * identical declarations for the vertical extension dropdown. Flatcap adds the tokens, sizing, focus ring and states.
+ * Full text: LICENSES/GPL-3.0.txt. The other files in this repository are MIT.
+ */
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu { --popupWidth: 280px; width: min(280px,90vw); max-width: 90vw; align-items: stretch; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu > .toolbar { width: 100%; max-height: 60vh; overflow-y: auto; overflow-x: hidden; flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: 2px; padding: 4px; box-sizing: border-box; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu .ExtensionDropdownIcon { width: 100%; flex: 0 0 auto; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu .ExtensionDropdownIcon > button { width: 100%; height: auto; min-height: 34px; justify-content: flex-start; gap: 10px; padding: 6px 30px 6px 10px; box-sizing: border-box; text-align: left; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu .ExtensionDropdownIcon > button::after { content: attr(title); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-family: var(--fc-font-ui); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu .ExtensionDropdownIcon > button > .button-badge { right: 6px; top: 3px; }
+@media (forced-colors: none) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu { background-color: var(--fc-bg-raised); color: var(--fc-text-primary); border-radius: var(--fc-radius-panel); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu .ExtensionDropdownIcon > button:hover { background-color: var(--fc-bg-hover); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) .extensionIconPopupMenu .ExtensionDropdownIcon > button:focus-visible { outline: 2px solid var(--fc-focus-ring); outline-offset: -2px; }
+}

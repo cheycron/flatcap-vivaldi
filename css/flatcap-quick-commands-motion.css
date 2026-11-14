@@ -1,0 +1,34 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Quick Commands entry motion
+ * Replaces the native Quick Commands entry with a 140ms fade and 4px rise. The list resizes immediately while
+ * you type. Off under reduced motion.
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+/* Replaces native float dropfade; never animates input/results individually. */
+@keyframes fc-qc-enter {
+ from { opacity: 0.92; translate: 0 -4px; }
+ to { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+ #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal.float {
+ animation-name: fc-qc-enter;
+ animation-duration: 140ms;
+ animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+ animation-delay: 0ms;
+ animation-iteration-count: 1;
+ animation-fill-mode: none;
+ }
+}
+/* Direct resizing during typing. No artificial close/exit lifecycle. */
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal .quick-command-container .quick-commands {
+ transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+ #browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) #modal-bg.qc-modal.float {
+ animation: none;
+ }
+}

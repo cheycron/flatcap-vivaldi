@@ -1,0 +1,21 @@
+/*
+ * Flatcap for Vivaldi 2.0.0: Downloads panel and popup
+ * Flatcap surface for the downloads panel and popup, readable file size, accent progress bar on a subtle track,
+ * a divider above the editor. Row sizes, warnings, controls and the unknown-size progress are left alone.
+ *
+ * Requires css/flatcap-ui.css. Applies only while Flatcap Slate or Flatcap Daylight is the active theme.
+ * Selectors were inspected against Vivaldi 8.3.4191.44; a newer Vivaldi can break them (unofficial UI modification).
+ * Inspired by the idea of the Awesome-Vivaldi download panel mod; no code was taken from it (it is a different
+ * implementation built on the Flatcap tokens).
+ *
+ * License: MIT (c) Cheycron Blaine. https://github.com/cheycron/flatcap-vivaldi
+ */
+/* Preserve virtual row heights, warnings, controls and unknown-size progress. */
+@media (forced-colors: none) {
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.panel.downloads,.download-popout) { background-color: var(--fc-bg-surface); color: var(--fc-text-primary); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.panel.downloads,.download-popout) .DownloadItem-FileSize { color: inherit; opacity: 0.85; font-variant-numeric: tabular-nums; }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.panel.downloads,.download-popout) .tree-row:not([data-selected]):not(.tree-row-selected):hover { background-color: var(--fc-bg-hover); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.panel.downloads,.download-popout) .DownloadItem-ProgressBar:not(.unknown-filesize) { background-color: var(--fc-border-subtle); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.panel.downloads,.download-popout) .DownloadItem-ProgressBar:not(.unknown-filesize):after { background-color: var(--fc-accent-fill); }
+#browser:is(.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200001,.theme-id-77d85a94-0f14-4fe6-88b6-2fcf00200002) :is(.panel.downloads,.download-popout) .download-editor { border-top: 1px solid var(--fc-border-subtle); }
+}
