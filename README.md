@@ -48,12 +48,12 @@ Requires **Vivaldi 5.0** or newer for the themes (the ZIP import) and a **deskto
 
 The CSS files are Vivaldi's *Custom UI Modifications*: unofficial, and a new Vivaldi version can break them. Step 1 is done once; step 4 is where you choose what to load.
 
-1. Open `vivaldi://experiments` in the address bar and turn on **Allow for using CSS modifications**. Vivaldi asks you to restart; restart it.
+1. Open `vivaldi://experiments` in the address bar and turn on **Allow CSS modifications** (the address opens Vivaldi's `chrome://flags/` page; the flag is `#vivaldi-css-mods`). Restart Vivaldi when it asks.
 2. Make a folder for the files somewhere outside Vivaldi's installation folder (for example `Documents/Vivaldi-css`).
 3. Copy `css/flatcap-ui.css` into it. It is the base: the other files use the colors it defines.
 4. Copy the optional files you want from [`css/`](https://github.com/cheycron/flatcap-vivaldi/tree/main/css) into the same folder (see the table in *Use it*). Put the files directly in the folder, not in subfolders.
 5. Open **Settings → Appearance → Custom UI Modifications** and choose that folder.
-6. Restart Vivaldi.
+6. Restart Vivaldi. The folder is only read at start-up: in the live QA a folder chosen while Vivaldi was running had no effect until the restart.
 
 Load each file once. The CSS only applies while **Flatcap Slate** or **Flatcap Daylight** is the active theme (see *Use it*).
 
@@ -66,8 +66,8 @@ Load each file once. The CSS only applies while **Flatcap Slate** or **Flatcap D
 | `themes/Flatcap-Daylight.zip` | Flatcap Daylight | light | `#285D85` |
 <!-- /build:themes -->
 
-- **Slate** and **Daylight** are two separate themes. Pick one in *Settings → Themes*. If you use Vivaldi's theme scheduler, schedule these two.
-- The CSS files are scoped to the Flatcap themes by theme id (the class `theme-id-<id>` that Vivaldi puts on `#browser`). With any other theme active, they should do nothing, so choosing another theme is also the quickest way to turn all the Flatcap CSS off. This relies on Vivaldi keeping the `id` of the ZIP when you import it. The evidence for that is indirect and it has not been confirmed on a real import yet; if the layers have no effect under the imported theme, see the [QA report](https://github.com/cheycron/flatcap-vivaldi/blob/main/docs/qa-report.md).
+- **Slate** and **Daylight** are two separate themes. Pick one in *Settings → Themes*. If you use Vivaldi's theme scheduler, schedule these two. A new profile has the schedule set to **Operating System**, which picks the theme for the current light or dark mode and overrides a manual choice; set the schedule to **No Schedule** to pick a theme yourself, or assign the two Flatcap themes to the light and dark slots.
+- The CSS files are scoped to the Flatcap themes by theme id (the class `theme-id-<id>` that Vivaldi puts on `#browser`). With any other theme active, they should do nothing, so choosing another theme is also the quickest way to turn all the Flatcap CSS off. This relies on Vivaldi keeping the `id` of the ZIP when you import it. That was checked on a real import in Vivaldi 8.3.4191.44: both ids are kept and the CSS tokens resolve under each theme and stay empty under Vivaldi's built-in themes. If the layers have no effect under the imported theme, see the [QA report](https://github.com/cheycron/flatcap-vivaldi/blob/main/docs/qa-report.md).
 - `flatcap-ui.css` is the base. Every other file needs it in the same folder, and none needs any other file. Load only what you like.
 
 <!-- build:layers -->
@@ -95,7 +95,7 @@ Load each file once. The CSS only applies while **Flatcap Slate** or **Flatcap D
 ### If the CSS seems to do nothing
 
 1. Is **Flatcap Slate** or **Flatcap Daylight** the active theme? The files do nothing under any other theme.
-2. Is **Allow for using CSS modifications** on in `vivaldi://experiments`, and did you restart after choosing the folder?
+2. Is **Allow CSS modifications** on in `vivaldi://experiments`, and did you restart after choosing the folder?
 3. Is `flatcap-ui.css` in the same folder? The other files depend on it.
 4. Are the files directly in the folder (not in a subfolder) and named without spaces?
 5. Otherwise, open an issue with your Vivaldi version.
@@ -129,7 +129,8 @@ Every mapping is in [docs/mapping.md](https://github.com/cheycron/flatcap-vivald
 ## Compatibility
 
 - Developed against **Vivaldi 8.3.4191.44 on Windows**. The selectors were inspected in that build; the author runs these files in it.
-- **Not tested:** other Vivaldi versions (including 7.x and earlier), macOS, Linux, a clean-profile import of the two ZIPs, themes installed from themes.vivaldi.net, window sizes below 900 px with the example, high-contrast Windows themes. The [QA report](https://github.com/cheycron/flatcap-vivaldi/blob/main/docs/qa-report.md) lists what has and has not been checked.
+- **Checked live (Vivaldi 8.3.4191.44, Windows, a throw-away profile):** importing both ZIPs and the update on a second import, the kept theme ids, the base layer's colors in both themes, no tokens under built-in themes, all 11 CSS files loading, and the Quick Commands layer (width, colors and input size in both themes).
+- **Not tested:** other Vivaldi versions (including 7.x and earlier), macOS, Linux, themes installed from themes.vivaldi.net, removing and re-importing a theme, the behavior of the layers other than the base and Quick Commands (motion, tabs, downloads, audio, extensions, URL field), the example with real bookmark folders, window sizes below 900 px with the example, high-contrast Windows themes, reduce motion. The [QA report](https://github.com/cheycron/flatcap-vivaldi/blob/main/docs/qa-report.md) lists what has and has not been checked.
 - The theme ZIPs hold Vivaldi's own theme parameters (`settings.json`, no background image), so they are not tied to a version of the CSS. The CSS files use class names from Vivaldi's interface, which Vivaldi does not promise to keep: **a new Vivaldi version can break them.** If something looks wrong after an update, remove the CSS folder (see *Use it*); the themes keep working.
 - The CSS does not change window layout, tab sizes or drag behavior, and does not use JavaScript or external assets. The extensions list layer changes the shape of the extensions dropdown, as described in the table.
 - The two themes carry fixed ids, and the CSS finds them by those ids. If you edit a theme in Vivaldi and its id changes, or you copy a theme, the CSS does not follow it.
