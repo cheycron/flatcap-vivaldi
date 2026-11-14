@@ -64,7 +64,7 @@ Why no id-independent scope was built: the only signals available to CSS are the
 
 Run on 2026-11-14 on Windows, Vivaldi **8.3.4191.44**, in a **throw-away profile** (`--user-data-dir` in the Windows temp folder, `--lang=en-US`, the UI driven through Chrome DevTools Protocol on `127.0.0.1`). The author's real profile and CSS folder were not used. The profile and the temporary files were deleted afterwards.
 
-Status values: `PASS` (observed live), `PARTIAL` (part of the check was observed; the text says which part), `NOT TESTED`. A DOM or computed-style reading proves the CSS is loaded and that a property has the expected value; it does not prove the screen looks right. No screenshot was inspected by eye in this run (see B6).
+Status values: `PASS` (observed live), `PARTIAL` (part of the check was observed; the text says which part), `NOT TESTED`. A DOM or computed-style reading proves the CSS is loaded and that a property has the expected value; it does not prove the screen looks right. Only the screenshots in B6 were looked at by eye; the other rows are not visual checks.
 
 ### B1. Theme import and the id
 
@@ -124,20 +124,30 @@ Finding (theme schedule): a new profile has *Settings → Themes → Schedule* s
 
 ### B6. Screenshots
 
-The four PNGs the README links were captured on the test machine with `Page.captureScreenshot` of the Vivaldi window (Slate and Daylight, with and without the Quick Commands popup). They are **not in `images/`**: the tool channel returns text only, so they could not be copied into the repo, and nobody looked at them, so they are not committed. They were kept on the Windows machine in the shared `Public` folder, in a folder named `flatcap-vivaldi-qa-shots` (SHA-256 below) for the owner to inspect and copy. Until they are in `images/`, the README images are broken links.
+The four PNGs the README links are in `images/`, 1440 × 900 each. They were taken again in a second pass (an earlier set at 1000 × 912 was discarded: the Daylight page was dark, there were five leftover *Blank Page* tabs, and the size was small).
 
-| File | Bytes | SHA-256 |
-| :--- | ---: | :--- |
-| `screenshot-slate.png` | 74518 | `772DF2E8D171AC2EACB027D6754F6BD08AACD16435A284CC00E0E4011F358F73` |
-| `screenshot-daylight.png` | 72760 | `23603AE3CE95D583D2D78109E141F3BD3FB4F54BBFE50499FF64F824B4FCD26D` |
-| `quick-commands-slate.png` | 79261 | `6C06A655BAC6BE339341A7001C1DB56A34B2A433111E05F0D02DCEF593B5FEB3` |
-| `quick-commands-daylight.png` | 77058 | `221886D7DE707A40B09D2C392A686F404F1F81FF3174BCEFA004148707118532` |
+Method:
 
-The tab shown is `https://example.com/` in an otherwise empty profile. Check that the capture includes the page area and not only the toolbar before using it.
+- A new throw-away profile (`--user-data-dir` in the Windows temp folder, `--no-first-run`, `--lang=en-US`, a high remote-debugging port, `--window-size=1440,900`), separate from the author's running Vivaldi, which was not touched.
+- Themes: both ZIPs were imported with `vivaldi.themePrivate.import` (the same call the *Open Theme* button makes); the preview objects it produced were moved to the user theme list, as the *Install* button does, and the theme was selected with `vivaldi.themes.current`. The theme schedule was set to off (`vivaldi.theme.schedule.enabled`), because the default (*Operating System*) overrides the choice. The `css/` files were placed in a temporary folder chosen in `vivaldi.appearance.css_ui_mods_directory` with `vivaldi-css-mods@1` in `Local State`, then Vivaldi was restarted. The `--fc-*` tokens and the `theme-id-…` class were read before each capture (Slate `--fc-bg-canvas` `#191D22`).
+- Page color scheme: Windows is in dark mode, so a page that follows `prefers-color-scheme` was dark under Daylight. For the captures the page was emulated through CDP, `Emulation.setEmulatedMedia` with `prefers-color-scheme: dark` for Slate and `light` for Daylight. The Vivaldi setting for the website color scheme was not used.
+- Content: three tabs, no logged-in account: `developer.mozilla.org` (the active one, a page of the CSS `color-scheme` property), `vivaldi.com` and `example.com`.
+- Capture: `Page.captureScreenshot` of the Vivaldi UI window (tab bar, address bar, side panel, page). For the Quick Commands images F2 was pressed (checked that the popup was open) and `tab` was typed. A first take of the Slate set had the popup open by mistake in the plain shot; it was repeated after closing the popup with Esc and checking it.
+- Transfer: the bytes were sent from the test machine over a TCP socket; the SHA-256 on the receiving side equals the one computed on the test machine.
+- Review: each PNG was opened and looked at. Slate shows a dark window with a dark page, Daylight a light window with a light page, the Quick Commands popup shows the typed `tab` and its results, no extra tabs, and no personal data or other windows. The two shown elements that are not Flatcap's are Vivaldi's default side-panel icons and the status bar clock.
+
+| File | Size | Bytes | SHA-256 |
+| :--- | :--- | ---: | :--- |
+| `screenshot-slate.png` | 1440 × 900 | 206134 | `BC294169C2DD60B7CE12625BA43EA29A30D5E5F1CC62D564B1B88F1857F7B03C` |
+| `screenshot-daylight.png` | 1440 × 900 | 197656 | `251423F73C685B9DF71BEF2726A01EAB672E2CE8F8BDD5DD107F4C8C119B3323` |
+| `quick-commands-slate.png` | 1440 × 900 | 193633 | `3BC84CC59951203E9CD1863D5E24AB98EAD10DB21A50E2416C70E66CD110A106` |
+| `quick-commands-daylight.png` | 1440 × 900 | 188794 | `4960D17E81683D05D342437D99BDC2017F57089EE7C0B1DE96CCEBFD58067FE4` |
+
+The profile, the CSS folder and the temporary files were deleted afterwards.
 
 ### B7. Release gates still open
 
 - Owner decision on the GPL-3.0 file (see Part A).
 - Decision on `flatcap-url-subtle.css` (kept as a documented exception, or fixed or removed).
-- Finish B3 to B6 (the layers marked NOT TESTED, accessibility, the example) and put the four screenshots in `images/` (B6).
+- Finish B3 to B5 (the layers marked NOT TESTED, accessibility, the example). The screenshots (B6) are done.
 - Publish on themes.vivaldi.net (separate step; the README has an HTML TODO comment for the link).
