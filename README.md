@@ -3,19 +3,19 @@
 ![Version](https://img.shields.io/badge/version-2.0.0-blueviolet) ![Vivaldi](https://img.shields.io/badge/Vivaldi-8.3-blue) ![License](https://img.shields.io/badge/license-MIT-blue)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/cheycron/flatcap-vivaldi/main/images/screenshot-slate.png" alt="Flatcap Slate in Vivaldi: graphite toolbars and tabs with a mineral-blue accent, over a dark web page" width="100%">
+  <img src="images/screenshot-slate.png" alt="Flatcap Slate in Vivaldi: graphite toolbars and tabs with a mineral-blue accent, over a dark web page" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/cheycron/flatcap-vivaldi/main/images/screenshot-daylight.png" alt="Flatcap Daylight in Vivaldi: the same window in the light mode, with soft light surfaces, over a light web page" width="100%">
+  <img src="images/screenshot-daylight.png" alt="Flatcap Daylight in Vivaldi: the same window in the light mode, with soft light surfaces, over a light web page" width="100%">
 </p>
 
 <p align="center"><sub>Flatcap Slate (dark) above, Flatcap Daylight (light) below.</sub></p>
 
 <table>
   <tr>
-    <td width="50%"><img src="https://raw.githubusercontent.com/cheycron/flatcap-vivaldi/main/images/quick-commands-slate.png" alt="Flatcap Slate on the Quick Commands popup with the text tab typed" width="100%"></td>
-    <td width="50%"><img src="https://raw.githubusercontent.com/cheycron/flatcap-vivaldi/main/images/quick-commands-daylight.png" alt="Flatcap Daylight on the Quick Commands popup with the text tab typed" width="100%"></td>
+    <td width="50%"><img src="images/quick-commands-slate.png" alt="Flatcap Slate on the Quick Commands popup with the text tab typed" width="100%"></td>
+    <td width="50%"><img src="images/quick-commands-daylight.png" alt="Flatcap Daylight on the Quick Commands popup with the text tab typed" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><sub>Slate</sub></td>
